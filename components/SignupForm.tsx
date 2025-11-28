@@ -10,7 +10,6 @@ import {
   getUserIP,
   getFullReferrer,
   getUserAgent,
-  getTimestamp,
 } from '../utils/airtable';
 
 interface FormData {
@@ -158,7 +157,6 @@ export const SignupForm: React.FC = () => {
           ip_address: userIP,
           referrer: getFullReferrer(),
           user_agent: getUserAgent(),
-          timestamp: getTimestamp(),
         };
 
         const result = await upsertAirtableRecord(step1Data);
@@ -197,7 +195,6 @@ export const SignupForm: React.FC = () => {
       ip_address: userIP,
       referrer: getFullReferrer(),
       user_agent: getUserAgent(),
-      timestamp: getTimestamp(),
     };
 
     // Update existing record or create new one
