@@ -14,6 +14,10 @@ interface AirtableRecord {
   start_receiving_at?: string;
   source?: string;
   keyword?: string;
+  ip_address?: string;
+  referrer?: string;
+  user_agent?: string;
+  timestamp?: string;
 }
 
 interface UTMParams {
@@ -38,10 +42,19 @@ export const getUTMParams = (): UTMParams => {
   };
 };
 
-// Get referrer source
+// Get referrer source - reads from URL param first (for iframe), then falls back to document.referrer
 export const getReferrerSource = (): string => {
   if (typeof window === 'undefined') return 'direct';
   
+  // First, check if referrer was passed as URL parameter (from parent page)
+  const urlParams = new URLSearchParams(window.location.search);
+  const refParam = urlParams.get('ref');
+  
+  if (refParam) {
+    return refParam; // Use the referrer passed from parent page
+  }
+  
+  // Fallback to document.referrer
   const referrer = document.referrer;
   
   if (!referrer) return 'direct';
@@ -64,10 +77,19 @@ export const getReferrerSource = (): string => {
   }
 };
 
-// Extract search keywords from Google referrer
+// Extract search keywords - reads from URL param first (for iframe), then falls back to referrer extraction
 export const getSearchKeyword = (): string | undefined => {
   if (typeof window === 'undefined') return undefined;
   
+  // First, check if keyword was passed as URL parameter (from parent page)
+  const urlParams = new URLSearchParams(window.location.search);
+  const keywordParam = urlParams.get('keyword');
+  
+  if (keywordParam) {
+    return keywordParam; // Use the keyword passed from parent page
+  }
+  
+  // Fallback to extracting from document.referrer
   const referrer = document.referrer;
   
   if (!referrer) return undefined;
@@ -114,6 +136,44 @@ export const buildSourceString = (): string => {
   if (utmParams.utm_campaign) sourceParts.push(utmParams.utm_campaign);
   
   return sourceParts.join(' / ');
+};
+
+// Fetch user's IP address
+export const getUserIP = async (): Promise<string> => {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return data.ip || 'unknown';
+  } catch (error) {
+    console.error('Failed to fetch IP:', error);
+    return 'unknown';
+  }
+};
+
+// Get full referrer URL (for detailed tracking)
+export const getFullReferrer = (): string => {
+  if (typeof window === 'undefined') return 'none';
+  
+  // Check URL parameter first
+  const urlParams = new URLSearchParams(window.location.search);
+  const refParam = urlParams.get('ref');
+  
+  if (refParam) {
+    return refParam;
+  }
+  
+  return document.referrer || 'direct';
+};
+
+// Get user agent (device/browser info)
+export const getUserAgent = (): string => {
+  if (typeof window === 'undefined') return 'unknown';
+  return navigator.userAgent || 'unknown';
+};
+
+// Get timestamp in ISO format
+export const getTimestamp = (): string => {
+  return new Date().toISOString();
 };
 
 // Create or update Airtable record

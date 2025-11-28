@@ -1,5 +1,5 @@
 // components/SignupForm.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { CompactInput } from './CompactInput';
 import { CompactSelect } from './CompactSelect';
@@ -7,6 +7,10 @@ import {
   upsertAirtableRecord,
   buildSourceString,
   getSearchKeyword,
+  getUserIP,
+  getFullReferrer,
+  getUserAgent,
+  getTimestamp,
 } from '../utils/airtable';
 
 interface FormData {
@@ -76,6 +80,16 @@ export const SignupForm: React.FC = () => {
   const [airtableRecordId, setAirtableRecordId] = useState<string | undefined>(
     undefined
   );
+  const [userIP, setUserIP] = useState<string>('');
+
+  // Fetch IP on component mount
+  useEffect(() => {
+    const fetchIP = async () => {
+      const ip = await getUserIP();
+      setUserIP(ip);
+    };
+    fetchIP();
+  }, []);
 
   // ---------- Validation ----------
 
@@ -141,6 +155,10 @@ export const SignupForm: React.FC = () => {
           business_type: getReadableLabel('businessType', formData.businessType),
           source: buildSourceString(),
           keyword: getSearchKeyword() || '',
+          ip_address: userIP,
+          referrer: getFullReferrer(),
+          user_agent: getUserAgent(),
+          timestamp: getTimestamp(),
         };
 
         const result = await upsertAirtableRecord(step1Data);
@@ -176,6 +194,10 @@ export const SignupForm: React.FC = () => {
       start_receiving_at: getReadableLabel('urgency', formData.urgency),
       source: buildSourceString(),
       keyword: getSearchKeyword() || '',
+      ip_address: userIP,
+      referrer: getFullReferrer(),
+      user_agent: getUserAgent(),
+      timestamp: getTimestamp(),
     };
 
     // Update existing record or create new one
